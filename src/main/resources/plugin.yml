@@ -1,0 +1,8 @@
+main: pl.javatar.minecraft.vwhelpop.HelpopPlugin
+name: vw-helpop
+version: "0.2"
+author: tirex
+
+commands:
+  helpop:
+    permission: helpop.user
