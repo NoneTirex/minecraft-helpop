@@ -12,10 +12,13 @@ import pl.javatar.minecraft.vwhelpop.configuration.HelpopConfiguration;
 import pl.javatar.minecraft.vwhelpop.configuration.MessageConfiguration;
 import pl.javatar.minecraft.vwhelpop.commands.HelpopCommand;
 import pl.javatar.minecraft.vwhelpop.configuration.WebHookConfiguration;
+import pl.javatar.minecraft.vwhelpop.listener.PlayerChatListener;
+import pl.javatar.minecraft.vwhelpop.listener.PlayerCommandListener;
 import pl.javatar.minecraft.vwhelpop.webhook.WebHook;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -55,7 +58,18 @@ public class HelpopPlugin
             return;
         }
 
+        this.getServer().getPluginManager().registerEvents(new PlayerCommandListener(this), this);
+        this.getServer().getPluginManager().registerEvents(new PlayerChatListener(this), this);
+
         this.getCommand("helpop").setExecutor(new HelpopCommand(this));
+
+        this.sendWebHookIfExists("server_on");
+    }
+
+    @Override
+    public void onDisable()
+    {
+        this.sendWebHookIfExists("server_off");
     }
 
     public void saveConfiguration()
@@ -108,5 +122,19 @@ public class HelpopPlugin
                 e.printStackTrace();
             }
         });
+    }
+
+    public void sendWebHookIfExists(String service, Function<String, String> function)
+    {
+        List<WebHook> webHooks = this.getWebHookConfiguration().getWebHook(service);
+        if (webHooks != null)
+        {
+            webHooks.forEach(webHook -> this.sendWebHook(webHook, function));
+        }
+    }
+
+    public void sendWebHookIfExists(String service)
+    {
+        this.sendWebHookIfExists(service, null);
     }
 }

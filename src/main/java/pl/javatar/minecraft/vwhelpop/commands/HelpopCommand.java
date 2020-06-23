@@ -70,19 +70,12 @@ public class HelpopCommand
 
         Bukkit.getConsoleSender().sendMessage(receiverMessage);
         Bukkit.broadcast(receiverMessage, "helpop.admin");
-        List<WebHook> webHookList = this.plugin.getWebHookConfiguration().getWebHook("helpop");
-        if (webHookList != null)
+        this.plugin.sendWebHookIfExists("helpop", text ->
         {
-            webHookList.forEach(webHook ->
-            {
-                this.plugin.sendWebHook(webHook, text ->
-                {
-                    text = text.replace("{sender_name}", sender.getName());
-                    text = text.replace("{message}", message);
-                    return text;
-                });
-            });
-        }
+            text = text.replace("{sender_name}", sender.getName());
+            text = text.replace("{message}", message);
+            return text;
+        });
         sender.sendMessage(senderMessage);
         return true;
     }
