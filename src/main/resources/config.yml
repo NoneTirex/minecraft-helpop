@@ -25,5 +25,6 @@ messages:
         disable: '&cHelpop został wyłączony!'
       disabled: '&cHelpop jest aktualnie wyłączony!'
       message_style:
-        receiver: '&4[HelpOp] &c{sender_name}&r> {message}'
+        receiver: '&4[HelpOp] &c{sender_name} &r>> {message}'
+        receiver_server: "&4[HelpOp] ({server_name}) &c{sender_name} &r>> {message}"
         sender: '&c{sender_name}&r> {message}'

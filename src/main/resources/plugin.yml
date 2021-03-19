@@ -1,7 +1,10 @@
 main: pl.javatar.minecraft.vwhelpop.HelpopPlugin
 name: vw-helpop
-version: "0.2"
+version: "${version} (#${ext.git['git.commit.id.abbrev']})"
 author: tirex
+
+softdepend:
+  - "goxy-pubsub"
 
 commands:
   helpop:

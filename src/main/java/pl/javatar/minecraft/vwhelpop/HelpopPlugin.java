@@ -1,16 +1,19 @@
 package pl.javatar.minecraft.vwhelpop;
 
 import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import pl.goxy.minecraft.pubsub.PubSub;
+import pl.goxy.minecraft.pubsub.PubSubService;
 import pl.javatar.http.HttpBuilder;
 import pl.javatar.http.HttpConnection;
 import pl.javatar.http.HttpContainer;
 import pl.javatar.http.HttpContentType;
 import pl.javatar.http.HttpMethod;
 import pl.javatar.http.HttpStatusException;
+import pl.javatar.minecraft.vwhelpop.commands.HelpopCommand;
 import pl.javatar.minecraft.vwhelpop.configuration.HelpopConfiguration;
 import pl.javatar.minecraft.vwhelpop.configuration.MessageConfiguration;
-import pl.javatar.minecraft.vwhelpop.commands.HelpopCommand;
 import pl.javatar.minecraft.vwhelpop.configuration.WebHookConfiguration;
 import pl.javatar.minecraft.vwhelpop.listener.PlayerChatListener;
 import pl.javatar.minecraft.vwhelpop.listener.PlayerCommandListener;
@@ -19,6 +22,7 @@ import pl.javatar.minecraft.vwhelpop.webhook.WebHook;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
@@ -29,13 +33,15 @@ public class HelpopPlugin
 {
     private final Executor executor = Executors.newSingleThreadExecutor();
 
-    private HelpopConfiguration  helpopConfiguration;
+    private HelpopConfiguration helpopConfiguration;
     private WebHookConfiguration webHookConfiguration;
     private MessageConfiguration messageConfiguration;
 
     @Override
     public void onEnable()
     {
+        PluginManager pluginManager = this.getServer().getPluginManager();
+
         this.helpopConfiguration = new HelpopConfiguration(this.getConfig());
         this.webHookConfiguration = new WebHookConfiguration(this.getConfig());
         this.messageConfiguration = new MessageConfiguration(this.getConfig());
@@ -57,11 +63,30 @@ public class HelpopPlugin
             this.getLogger().log(Level.WARNING, "Problem with load configuration", e);
             return;
         }
+        PubSub pubSub;
+        if (pluginManager.isPluginEnabled("goxy-pubsub"))
+        {
+            PubSubService pubSubService = (PubSubService) Objects.requireNonNull(
+                    pluginManager.getPlugin("goxy-pubsub"));
+            pubSub = pubSubService.getPubSub(this);
+        }
+        else
+        {
+            pubSub = null;
+        }
+        HelpopCommand helpopCommand = new HelpopCommand(this, pubSub);
+        if (pubSub != null)
+        {
+            pubSub.registerHandler("helpop", HelpopCommand.HelpopData.class, (context, data) ->
+            {
+                helpopCommand.handleMessage(data, context.getServer() != null ? context.getServer().getName() : null);
+            });
+        }
 
-        this.getServer().getPluginManager().registerEvents(new PlayerCommandListener(this), this);
-        this.getServer().getPluginManager().registerEvents(new PlayerChatListener(this), this);
+        pluginManager.registerEvents(new PlayerCommandListener(this), this);
+        pluginManager.registerEvents(new PlayerChatListener(this), this);
 
-        this.getCommand("helpop").setExecutor(new HelpopCommand(this));
+        Objects.requireNonNull(this.getCommand("helpop")).setExecutor(helpopCommand);
 
         this.sendWebHookIfExists("server_on");
     }
